@@ -1,7 +1,7 @@
 __pycache__/
 *.pyc
 
-venv/
+.venv/
 
 .ipynb_checkpoints/
 
@@ -9,4 +9,5 @@ venv/
 *.log
 
 data_raw/
+data_clean/
 output/
