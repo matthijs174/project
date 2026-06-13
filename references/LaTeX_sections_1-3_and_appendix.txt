@@ -1,0 +1,441 @@
+\section{Introduction}\label{sec:introduction}
+
+Financial markets are characterised by uncertainty. For investors, risk managers and policy makers, this uncertainty is reflected not only in the direction of price changes, but also in the magnitude of those changes. Volatility is therefore one of the central concepts in financial econometrics. It measures the variability of returns over time and is commonly interpreted as an indicator of financial risk. Accurate volatility forecasts are important for portfolio allocation, risk management, derivative pricing and trading decisions, since they provide information about the expected degree of future market uncertainty.
+
+Bitcoin provides a particularly relevant setting for volatility modelling. Since its introduction in 2009, Bitcoin has developed from a relatively small digital asset into a widely traded cryptocurrency and investment instrument. In contrast to traditional financial assets, Bitcoin is not issued by a central authority, is traded continuously and is strongly influenced by speculative demand, liquidity conditions, investor sentiment and regulatory developments. These characteristics make Bitcoin returns highly volatile and motivate the use of econometric models that can describe and forecast changes in conditional volatility over time.
+
+A key empirical regularity of financial return series is that volatility is time-varying. In particular, returns often exhibit volatility clustering, meaning that periods with large absolute returns tend to be followed by further periods with large absolute returns, while periods with small absolute returns tend to be followed by further periods with small absolute returns \citep{mandelbrot1963,cont2001}. This implies that, although the sign of future returns may be difficult to predict, the magnitude of future returns may still be partly predictable from past information. A model with constant variance would treat calm and turbulent market periods as equally risky, which is unlikely to be appropriate for Bitcoin returns. Consequently, the conditional variance of returns should be modelled as a time-varying process.
+
+The Autoregressive Conditional Heteroskedasticity model introduced by \citet{engle1982} provides a natural starting point for modelling time-varying volatility. In an ARCH model, the conditional variance depends on past squared shocks. Hence, large shocks in previous periods increase the predicted variance in the current period. This feature allows the model to capture volatility clustering. However, a pure ARCH model may require many lags to describe the persistence typically observed in financial volatility. The Generalized Autoregressive Conditional Heteroskedasticity model of \citet{bollerslev1986} extends the ARCH framework by allowing the conditional variance to depend not only on past squared shocks, but also on lagged conditional variances. This makes the GARCH model a parsimonious and widely used model for persistent volatility dynamics.
+
+Although ARCH and GARCH models capture volatility clustering, standard specifications are symmetric: positive and negative shocks of the same magnitude have the same effect on future volatility. This may be restrictive, since financial markets can react differently to negative and positive news. In equity markets, negative shocks are often associated with stronger increases in future volatility, a phenomenon commonly referred to as the leverage effect. Whether a similar asymmetric response is present in Bitcoin returns is an empirical question. The Exponential GARCH model proposed by \citet{nelson1991} is useful in this context because it models the logarithm of the conditional variance and allows positive and negative shocks to have different effects on future volatility.
+
+This thesis investigates the conditional volatility of daily Bitcoin log returns using ARCH, GARCH and EGARCH models. The main research question is:
+
+\begin{quote}
+\emph{Which of the ARCH, GARCH and EGARCH models provides the most accurate description and forecast of the conditional volatility of daily Bitcoin returns?}
+\end{quote}
+
+To answer the research question, the thesis proceeds in several steps. Section~\ref{sec:literature_review} first reviews the relevant literature on financial return volatility, ARCH-family models and cryptocurrency volatility, thereby positioning the empirical analysis within the existing research. Section~\ref{sec:data} then describes the Bitcoin price data, explains the construction of daily log returns and examines the main statistical properties of the return series, including stationarity, non-normality, volatility clustering and the presence of ARCH effects. Based on these empirical characteristics, Section~\ref{sec:methodology} introduces the ARCH, GARCH and EGARCH models, discusses maximum likelihood estimation and presents the criteria used for model evaluation. Section~\ref{sec:empirical_results} reports and interprets the estimation results and compares the models using both in-sample criteria, such as the Akaike Information Criterion and the Bayesian Information Criterion, and out-of-sample forecast evaluation measures. This comparison makes it possible to assess whether the volatility persistence captured by GARCH and the asymmetric response captured by EGARCH improve volatility modelling and forecasting relative to the simpler ARCH benchmark. Section~\ref{sec:discussion} discusses the main findings, limitations and robustness considerations. Finally, Section~\ref{sec:conclusion} concludes by answering the research question and summarising the implications of the results.
+
+\textcolor{red}{The contribution of this thesis is to provide a transparent and structured comparison of three classical ARCH-family models for Bitcoin volatility. Rather than focusing only on statistical fit, the analysis connects the empirical properties of Bitcoin returns to the econometric modelling choices and evaluates whether increasingly flexible volatility specifications lead to improved forecasting performance. In doing so, the thesis applies established financial econometric methods to a highly volatile and economically relevant digital asset.}
+
+
+\section{Literature Review}\label{sec:literature_review}
+
+\subsection{Stylized facts of financial returns}
+\label{subsec:stylized_facts}
+
+Financial return series typically display empirical regularities that distinguish them from independent and identically distributed Gaussian observations. These regularities are often referred to as stylized facts: statistical properties that are not exact laws, but that appear consistently across many financial markets and sample periods \citep{cont2001}. Since this thesis studies the volatility of Bitcoin returns, these stylized facts provide the empirical motivation for using conditional volatility models rather than models with a constant unconditional variance.
+
+A first important stylized fact is that financial prices themselves are often non-stationary, whereas return series are usually more suitable for time-series modelling. For this reason, empirical studies typically analyse returns rather than price levels. In the context of this thesis, Bitcoin prices are transformed into log returns, so that the object of interest is the relative price change from one day to the next. This transformation removes the strong level dependence present in the price series and produces a series that can be analysed using standard tools for stationary financial time series. Whether the resulting Bitcoin return series is indeed stationary is assessed empirically in the data section.
+
+A second stylized fact is that financial returns are usually not normally distributed. In particular, return distributions tend to exhibit excess kurtosis, meaning that extreme positive and negative observations occur more frequently than would be expected under a Gaussian distribution. This property is commonly referred to as fat-tailedness or leptokurtosis. It is important for volatility modelling because a model with conditionally normal innovations may underestimate the probability of large return movements. Consequently, empirical volatility studies often compare Gaussian innovations with heavier-tailed alternatives, such as the Student-$t$ distribution.
+
+A third stylized fact is that raw returns often display little linear autocorrelation, especially at daily frequencies. This means that past returns usually contain limited information about the sign or direction of future returns. This observation is consistent with the idea that financial markets quickly incorporate new information into prices. However, the absence of strong autocorrelation in returns does not imply that returns are independent. In particular, nonlinear transformations of returns, such as absolute returns or squared returns, often show much stronger serial dependence \citep{cont2001}. This distinction is central for volatility modelling: the conditional mean of returns may be difficult to predict, while the conditional variance may still be predictable.
+
+A fourth and particularly important stylized fact is volatility clustering. This refers to the tendency of large price changes to be followed by further large price changes, and small price changes to be followed by further small price changes. Early empirical work by \citet{mandelbrot1963} and \citet{fama1965} already emphasized that large changes in speculative prices tend to cluster together, although the direction of those changes remains difficult to predict. In volatility terms, this means that periods of high uncertainty tend to persist for some time, while calm periods also tend to persist. Volatility clustering therefore suggests that the conditional variance of returns changes over time and depends on past information.
+
+A final stylized fact relevant for this thesis is the possible asymmetry in volatility responses. In equity markets, negative returns are often found to have a stronger effect on future volatility than positive returns of the same magnitude. This is frequently referred to as the leverage effect. \textcolor{red}{For Bitcoin, however, the traditional leverage interpretation is less direct, because Bitcoin is not a firm with a debt-to-equity structure.} Nevertheless, it remains possible that negative and positive Bitcoin return shocks have different effects on subsequent volatility. For this reason, it is more precise in this thesis to refer to asymmetric volatility responses or asymmetric news effects rather than to interpret such asymmetry mechanically as financial leverage.
+
+Together, these stylized facts motivate the use of ARCH-family models \citep{bollerslev1992}. The following subsections therefore discuss these models and their relevance for modelling and forecasting Bitcoin return volatility.
+
+\subsection{ARCH models and conditional heteroskedasticity}
+\label{subsec:arch_models}
+The stylized facts discussed above suggest that financial return volatility is not constant over time. In particular, volatility clustering implies that large shocks tend to be followed by periods of high volatility, while small shocks tend to be followed by periods of relatively low volatility. This observation is difficult to reconcile with classical time-series models in which the one-period-ahead forecast variance is constant. The autoregressive conditional heteroskedasticity model, introduced by \citet{engle1982}, provides a formal econometric framework for modelling this time variation in conditional variance.
+
+Let $\{y_t\}_{t\in\mathbb{Z}}$ denote a sequence of Bitcoin log returns, where the returns are assumed to have zero conditional mean. The ARCH(1) model can then be written as
+\begin{equation*}
+    y_t = \sigma_t \varepsilon_t,
+\end{equation*}
+\begin{equation*}
+    \sigma_t^2 = \omega + \alpha_1 y_{t-1}^2,
+    \label{eq:arch_1}
+\end{equation*}
+where $\varepsilon_t$ is an independent and identically distributed standardized innovation with zero mean and variance one. The parameters satisfy $\omega > 0$ and $\alpha_1 \geq 0$, which ensure that $\sigma_t^2 > 0$ for all $t$.
+
+More generally, an ARCH($q$) model is given by
+\begin{equation*}
+    \sigma_t^2 = \omega + \sum_{i=1}^{q} \alpha_i y_{t-i}^2,
+    \label{eq:arch_q}
+\end{equation*}
+where $\omega > 0$ and $\alpha_i \geq 0$ for $i=1,\ldots,q$. In this specification, large past squared returns increase current conditional volatility. The model therefore captures the idea that recent large shocks contain information about current risk.
+
+An important distinction in ARCH models is the difference between the conditional and unconditional variance. Although the unconditional variance may be constant under suitable stationarity conditions, the conditional variance changes over time as new information becomes available. This makes ARCH models suitable for financial return data: returns may have little serial correlation in their levels, while their volatility can still be predictable through the dependence of $\sigma_t^2$ on past squared shocks. In this sense, ARCH models directly address the empirical fact that squared or absolute returns often display serial dependence even when raw returns do not.
+
+The ARCH framework is also closely connected to model diagnostics. Before estimating a conditional volatility model, it is common to test whether the return series or residuals from a mean equation exhibit ARCH effects. \textcolor{red}{Engle proposed a Lagrange multiplier test for this purpose,} based on the autocorrelation of squared residuals \citep{engle1982}. In practical terms, the test examines whether past squared residuals help explain current squared residuals. A rejection of the null hypothesis of no ARCH effects provides evidence that a constant-variance specification is inadequate and that a conditional volatility model is appropriate.
+
+For this thesis, the ARCH model has two roles. First, it provides the theoretical starting point for modelling time-varying Bitcoin return volatility. If Bitcoin returns display volatility clustering and significant ARCH effects, then the conditional variance should not be treated as constant. Second, ARCH serves as a useful benchmark model against which more flexible models can be compared. However, a limitation of ARCH models is that many lagged squared innovations may be needed to capture persistent volatility. This can lead to a relatively large number of parameters. The next subsection therefore discusses the generalized ARCH model, which extends the ARCH framework by including lagged conditional variances and thereby provides a more parsimonious representation of volatility persistence.
+
+
+\subsection{GARCH models and volatility persistence}
+\label{subsec:garch_models}
+
+Although ARCH models provide an important starting point for modelling time-varying conditional variance, they may require a relatively large number of lagged squared innovations to capture the persistence typically observed in financial volatility. This limitation motivated the generalized autoregressive conditional heteroskedasticity model of \citet{bollerslev1986}. The GARCH model extends the ARCH framework by allowing the conditional variance to depend not only on past squared innovations, but also on its own lagged values. As a result, GARCH models can capture persistent volatility dynamics in a more parsimonious way than high-order ARCH models.
+
+For the return series $\{y_t\}_{t\in\mathbb{Z}}$, the GARCH($p,q$) model extends the ARCH model by allowing the conditional variance to depend on both past squared returns and past conditional variances:
+\begin{equation*}
+    y_t = \sigma_t \varepsilon_t,
+\end{equation*}
+\begin{equation*}
+     \sigma_t^2 = \omega + \sum_{i=1}^{q} \alpha_i y_{t-i}^2 + \sum_{j=1}^{p} \beta_j \sigma_{t-j}^2.
+    \label{eq:garch_pq}
+\end{equation*}
+where $\omega > 0$, $\alpha_i \geq 0$ and $\beta_j \geq 0$. The $\alpha_i$ parameters measure the effect of past shocks, while the $\beta_j$ parameters measure the persistence of past conditional variances. In empirical applications, the GARCH(1,1) specification is used particularly often:
+\begin{equation*}
+    \sigma_t^2 = \omega + \alpha y_{t-1}^2 + \beta \sigma_{t-1}^2.
+    \label{eq:garch_11}
+\end{equation*}
+This model is attractive because it is simple, but still capable of capturing highly persistent volatility. The parameter $\alpha$ represents the short-run reaction of volatility to new information, often called the news effect. The parameter $\beta$ captures the persistence of volatility from one period to the next. When $\alpha + \beta$ is close to one, shocks to volatility decay slowly, implying that high-volatility periods tend to persist. Furthermore, evidence from comparative forecasting studies suggests that the simple GARCH(1,1) specification often performs remarkably well relative to more complex alternatives \citep{hansen2005}.
+The persistence interpretation can also be seen by rewriting the GARCH(1,1) model as an infinite-order ARCH process. The full derivation to this can be found in \ref{app:GARCH_unfolding}.
+
+Under the usual covariance stationarity condition for the GARCH(1,1) model, $\alpha + \beta < 1$, the unconditional variance is given by
+$$
+\operatorname{Var}(y_t)
+=
+\frac{\omega}{1-\alpha-\beta}.
+\label{eq:garch_unconditional_variance}
+$$
+This expression highlights the role of persistence. If $\alpha + \beta$ approaches one, the unconditional variance becomes large and shocks to volatility become highly persistent. In financial time series, estimates of $\alpha + \beta$ are often close to one, reflecting the empirical tendency for volatility to remain elevated after large market movements.
+
+For this thesis, the GARCH model is central because Bitcoin returns are expected to exhibit volatility clustering and persistence. If large Bitcoin return shocks increase volatility for several subsequent days, then a simple ARCH model may be too restrictive. The GARCH model provides a natural benchmark because it captures both the immediate effect of shocks through $y_{t-1}^2$ and the persistence of previous volatility through $\sigma_{t-1}^2$. Therefore, comparing ARCH and GARCH models helps assess whether explicitly modelling volatility persistence improves the fit and forecasting performance for Bitcoin returns.
+
+However, the standard GARCH model is symmetric in the sense that positive and negative shocks of the same magnitude have the same effect on conditional variance. This may be restrictive if negative Bitcoin return shocks affect future volatility differently from positive shocks. The next subsection, therefore, discusses the EGARCH model, which extends the GARCH framework by allowing for asymmetric volatility responses.
+
+
+\subsection{EGARCH models and asymmetric volatility responses}
+\label{subsec:egarch_models}
+
+The GARCH model captures volatility clustering and persistence, but it treats positive and negative shocks symmetrically. This follows from the fact that the conditional variance depends on squared returns. A positive return shock and a negative return shock of the same magnitude therefore have the same effect on future volatility. In financial markets, this symmetry assumption may be restrictive, since negative news can affect uncertainty differently from positive news. To address this limitation, \citet{nelson1991} introduced the exponential GARCH model.
+
+The EGARCH model extends the GARCH framework by modelling the logarithm of the conditional variance. For a return series $\{y_t\}_{t\in\mathbb{Z}}$, written as
+\begin{equation*}
+    y_t = \sigma_t \varepsilon_t,
+\end{equation*}
+where $\varepsilon_t$ is an independent and identically distributed standardized innovation with mean zero and variance one, the EGARCH(1,1) model can be written as
+\begin{equation*}
+    \log(\sigma_t^2) = \omega + \beta \log(\sigma_{t-1}^2) + \alpha \left( |\varepsilon_{t-1}| - E|\varepsilon_{t-1}| \right) + \gamma \varepsilon_{t-1}.
+    \label{eq:egarch_11}
+\end{equation*}
+
+In this specification, $\beta$ captures volatility persistence, similar to the role of the lagged conditional variance in the GARCH model. The parameter $\alpha$ measures the effect of the magnitude of the previous standardized shock on current volatility. The term $|\varepsilon_{t-1}| - E|\varepsilon_{t-1}|$ is centred around zero, so that it captures whether the absolute shock is larger or smaller than expected. The parameter $\gamma$ captures asymmetry: it allows positive and negative shocks of the same size to have different effects on conditional volatility.
+
+The interpretation of $\gamma$ is especially important. Suppose that two shocks have the same magnitude, but opposite signs. Because the absolute-value term is the same for both shocks, any difference in their effect on volatility is caused by $\gamma \varepsilon_{t-1}$. If $\gamma < 0$, a negative shock increases future volatility more than a positive shock of the same size. If $\gamma = 0$, the model is symmetric. If $\gamma > 0$, positive shocks have a stronger effect on future volatility than negative shocks. This makes EGARCH useful for testing whether volatility reacts asymmetrically to return innovations. The importance of allowing for asymmetric volatility responses is also emphasized by \citet{glosten1993}, who allow positive and negative return innovations to have different effects on conditional volatility.
+
+A second advantage of the EGARCH specification is that the logarithm of the conditional variance is modelled rather than the conditional variance itself. Since $\log(\sigma_t^2)$ can take any real value while $\sigma_t^2$ is always positive after exponentiation, the model automatically ensures a positive conditional variance. This differs from standard ARCH and GARCH models, where non-negativity restrictions on the parameters are required to guarantee that the conditional variance remains positive.
+
+For this thesis, EGARCH is relevant because Bitcoin volatility may respond differently to negative and positive return shocks. In equity markets, such asymmetry is often interpreted as a leverage effect. \textcolor{red}{For Bitcoin, however, this interpretation should be used with caution, since Bitcoin is not a firm with a debt-to-equity structure. }It is therefore more precise to refer to asymmetric volatility responses or asymmetric news effects. Including EGARCH in the model comparison allows this thesis to examine whether such asymmetry improves the modelling and forecasting of Bitcoin return volatility relative to the symmetric ARCH and GARCH specifications.
+
+The EGARCH model therefore complements the ARCH and GARCH models. ARCH captures the dependence of volatility on past shocks, GARCH captures volatility persistence more parsimoniously, and EGARCH additionally allows for asymmetric effects of positive and negative shocks. The next subsection discusses another important modelling choice: the conditional distribution of the standardized innovations.
+
+
+\subsection{Conditional innovation distributions}
+\label{subsec:innovation_distributions}
+
+ARCH-family models describe the evolution of conditional volatility over time, but they do not by themselves determine the full conditional distribution of returns. An additional modelling choice concerns the distribution of the standardized innovations $\varepsilon_t$ in
+\begin{equation*}
+    y_t = \sigma_t \varepsilon_t.
+\end{equation*}
+While the volatility model determines the behaviour of $\sigma_t^2$, the innovation distribution determines the probabilistic behaviour of the shocks driving returns.
+
+Early ARCH-family models were often estimated under the assumption of conditionally normally distributed innovations. For example, the original ARCH model of \citet{engle1982} was developed using a Gaussian likelihood framework. However, financial return series often exhibit excess kurtosis and occasionally skewness, implying that extreme observations occur more frequently than predicted by a Gaussian distribution \citep{cont2001}. Subsequent work therefore considered heavier-tailed alternatives, such as the Student-$t$ distribution, for speculative returns \citep{bollerslev1987}.
+
+A widely used alternative is the Student-$t$ distribution, which allows for heavier tails than the normal distribution and is therefore better able to capture large return movements. More flexible specifications additionally allow for asymmetry in the innovation distribution. Examples include the skewed Student-$t$ distribution and other asymmetric heavy-tailed distributions. Such distributions may improve model fit when return series exhibit both fat tails and skewness.
+
+For this thesis, the innovation distribution constitutes an additional dimension of model comparison alongside the volatility specification itself. The empirical analysis therefore considers the normal, Student-$t$ and skewed Student-$t$ distributions as alternative specifications for the standardized innovations.
+
+
+\subsection{Volatility modelling of Bitcoin and cryptocurrencies}
+\label{subsec:bitcoin_crypto_volatility}
+
+The ARCH-family models discussed above were originally developed for traditional economic and financial time series, but they have also been widely applied to cryptocurrencies. This is natural because cryptocurrency returns often display the same empirical features that motivate conditional volatility models, such as large price movements, volatility clustering and heavy-tailed return distributions. As the first and most widely studied cryptocurrency, Bitcoin has received particular attention in the volatility modelling literature.
+
+One of the earlier applications is \citet{dyhrberg2016}, who studies Bitcoin using GARCH-type models and compares its volatility behaviour with that of gold and the US dollar. The study argues that Bitcoin shares some characteristics with both assets and may have relevance for risk management. This paper is important because it treats Bitcoin not merely as a technological innovation, but as a financial asset whose risk dynamics can be studied using standard tools from financial econometrics.
+
+A more direct comparison of volatility models for Bitcoin is provided by \citet{katsiampa2017}. This study compares several GARCH-type models and finds that an autoregressive component GARCH model provides the best fit according to goodness-of-fit criteria. The result suggests that Bitcoin volatility may contain both short-run and long-run components. However, the model set considered by \citet{katsiampa2017} is broader than the model set used in this thesis. The present thesis focuses specifically on ARCH, GARCH and EGARCH models in order to provide a more transparent comparison between a basic conditional heteroskedasticity model, a persistent volatility model and an asymmetric volatility model.
+
+The cryptocurrency volatility literature was extended by \citet{chu2017}, who apply GARCH-type models to seven major cryptocurrencies. Their study shows that conditional volatility modelling is not only relevant for Bitcoin, but also for cryptocurrency markets more generally. By estimating multiple GARCH specifications and assessing model fit and Value-at-Risk performance, they demonstrate that the choice of both volatility model and innovation distribution can materially affect empirical conclusions.
+
+The paper most closely related to this thesis is \citet{yildirim2023}, who compare ARCH, GARCH and EGARCH models for Bitcoin returns. They use weekly Bitcoin price data, compute logarithmic returns, test for stationarity using the augmented Dickey--Fuller test and examine ARCH effects before estimating conditional variance models. Their findings indicate that the GARCH(1,1) model performs best according to the Akaike information criterion. This provides a useful benchmark for the present thesis. However, their use of weekly data differs from the daily return frequency considered here, and volatility dynamics may depend on the sampling frequency. Therefore, their results do not remove the need for a separate empirical analysis of daily Bitcoin returns.
+
+Overall, the existing literature supports the use of ARCH-family models for Bitcoin and cryptocurrency volatility. At the same time, previous studies differ in their sample periods, data frequencies, model classes, innovation distributions and evaluation criteria. This thesis builds on this literature by comparing ARCH, GARCH and EGARCH models for daily Bitcoin log returns, while also considering alternative innovation distributions and both in-sample and out-of-sample model evaluation.
+
+\section{Data}\label{sec:data}
+
+\subsection{Bitcoin price data}\label{subsec:bitcoin_data}
+
+This thesis uses daily Bitcoin price data obtained from Yahoo Finance through the \texttt{yfinance} Python package. An overview of the dataset is provided in Table~\ref{tab:data_overview}. The sample spans multiple market phases and is therefore well suited for the analysis of Bitcoin volatility.
+
+\begin{table}[H]
+    \centering
+    \caption{Overview of the Bitcoin dataset}
+    \label{tab:data_overview}
+    \begin{tabular}{ll}
+        \toprule
+        \textbf{Characteristic} & \textbf{Description} \\
+        \midrule
+        Asset & Bitcoin (BTC-USD) \\
+        Data source & Yahoo Finance (\texttt{yfinance}) \\
+        Frequency & Daily \\
+        Currency & United States Dollar (USD) \\
+        Sample start & 1 January 2016 \\
+        Sample end & 1 June 2026 \\
+        Observations & 3,804 \\
+        Price variable & Daily closing price \\
+        Return measure & Daily log returns \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Daily observations are used because they provide a suitable balance between information content and data quality. They are frequent enough to capture time variation in volatility, while avoiding many of the market microstructure effects that may affect higher-frequency data. Since Bitcoin is traded continuously, the sample consists of daily calendar observations rather than observations restricted to weekday trading days. The price variable is the daily closing price of BTC-USD. Before constructing returns, the dataset was inspected for missing values and duplicate dates. The daily closing prices are then transformed into log returns, since the objective of this thesis is to model and forecast return volatility rather than the level of Bitcoin prices. Taking first differences of log prices reduces the sample by one observation, resulting in 3,803 daily log returns. The construction of these returns is described in section~\ref{subsec:log_returns}.
+
+Figure~\ref{fig:bitcoin_price} presents the daily Bitcoin closing price over the sample period. The series shows substantial changes in the level of Bitcoin prices, including episodes of rapid appreciation and sharp declines.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{figures/bitcoin_price.png}
+    \caption{Daily Bitcoin price series from 1 January 2016 to 1 June 2026.}
+    \label{fig:bitcoin_price}
+\end{figure}
+
+
+
+\subsection{Construction of log returns}\label{subsec:log_returns}
+
+The raw Bitcoin price series is not used directly in the empirical analysis. Instead, prices are transformed into daily log returns, which measure proportional price changes and are the standard variable used in financial volatility modelling.
+
+Let $p_t$ denote the Bitcoin closing price observed on day $t$, where
+$t = 1,2,\ldots,T$ and $T$ denotes the total number of observations in the sample. The daily log-return is defined as
+
+\begin{equation}
+    y_t = 100 \left( \log(p_t) - \log(p_{t-1}) \right).
+    \label{eq:log_return}
+\end{equation}
+The multiplication by 100 expresses returns approximately in percentage terms.
+
+Log returns are widely used in the financial econometrics literature for several reasons. First, they measure proportional rather than absolute price changes, making returns comparable across different price levels. Second, continuously compounded returns possess desirable statistical properties and are additive over time. Finally, financial volatility models such as ARCH, GARCH and EGARCH are typically specified in terms of return series rather than price levels.
+
+The transformation from prices to returns substantially alters the appearance of the series. While the Bitcoin price series exhibits pronounced long-run movements and periods of sustained growth or decline, the return series fluctuates around a relatively stable level. Figure~\ref{fig:bitcoin_returns} shows that periods of large positive and negative returns tend to occur close together, while calmer periods are also visible. This provides a first visual indication of volatility clustering, a feature that is examined more formally in Section~\ref{subsec:arch_effects}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{figures/bitcoin_log_returns.png}
+    \caption{Daily Bitcoin log returns from 1 January 2016 to 1 June 2026.}
+    \label{fig:bitcoin_returns}
+\end{figure}
+
+
+\subsection{Descriptive statistics}\label{subsec:statistics}
+
+Table~\ref{tab:descriptive_statistics} reports summary statistics for the daily Bitcoin log return series defined in equation~\eqref{eq:log_return}. These statistics provide a first indication of the unconditional distributional properties of the returns before the time-series dependence and conditional volatility dynamics are analysed.
+
+\begin{table}[H]
+    \centering
+    \caption{Descriptive statistics and Jarque--Bera test of daily Bitcoin log returns}
+    \label{tab:descriptive_statistics}
+    \begin{tabular}{lr}
+        \toprule
+        \textbf{Statistic} & \textbf{Value} \\
+        \midrule
+        Observations & 3,803 \\
+        Mean & 0.1350 \\
+        Standard deviation & 3.5029 \\
+        Minimum & -46.4730 \\
+        Maximum & 22.5119 \\
+        Skewness & -0.6636 \\
+        Pearson kurtosis & 15.3239 \\
+        Jarque--Bera statistic & 24276.12 \\
+        JB p-value & $<0.0001$ \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+The average daily log return is approximately 0.135, indicating a positive mean return over the sample period. However, this average is small relative to the standard deviation of 3.503, which reflects the substantial variability of daily Bitcoin returns. The minimum and maximum values further illustrate the presence of extreme daily return realisations. The most negative daily log return equals -46.473, whereas the largest positive daily log return equals 22.512. These observations indicate that the return series contains large shocks, which is a common feature of financial return data and is particularly relevant for volatility modelling.
+
+The distribution of returns also deviates strongly from normality. The skewness is negative, with a value of -0.664, implying that the left tail of the distribution is more pronounced than the right tail. In addition, the Pearson kurtosis equals 15.324, which is far above the normal-distribution benchmark of three. This indicates that Bitcoin returns are leptokurtic: the distribution is more peaked around its centre and has heavier tails than a normal distribution. Hence, extreme observations occur more frequently than would be expected under normality.
+
+This conclusion is supported by the Jarque--Bera test, which jointly tests whether the skewness and kurtosis of the series are consistent with a normal distribution. The test statistic is 24276.12 and the corresponding p-value is smaller than 0.0001. Therefore, the null hypothesis of normally distributed returns is strongly rejected. This provides formal evidence that the unconditional distribution of Bitcoin returns is non-normal.
+
+Overall, the descriptive statistics indicate that Bitcoin log returns are asymmetric and heavy-tailed. These distributional features are consistent with the stylized facts discussed in Section~\ref{subsec:stylized_facts} and motivate the consideration of non-normal innovation distributions, such as the Student-$t$ and skewed Student-$t$ distributions, in the volatility models estimated later.
+
+\subsection{Stationarity analysis}\label{subsec:stationarity}
+
+Before modelling the conditional variance, the time-series properties of the return series are examined. In particular, it is important to verify that the log returns do not contain a unit root, since ARCH-family models are applied to stationary return processes rather than non-stationary price levels.
+
+The Augmented Dickey--Fuller (ADF) test is used for this purpose. The null hypothesis is that the series contains a unit root, while the alternative hypothesis is stationarity. Table~\ref{tab:adf_results} reports the test results for the daily Bitcoin log returns.
+
+Table~\ref{tab:adf_results} reports the results of the ADF test applied to the daily Bitcoin log return series.
+
+\begin{table}[H]
+    \centering
+    \caption{Augmented Dickey--Fuller test for Bitcoin log returns}
+    \label{tab:adf_results}
+    \begin{tabular}{lr}
+        \toprule
+        \textbf{Statistic} & \textbf{Value} \\
+        \midrule
+        ADF statistic & -42.946 \\
+        p-value & $<0.001$ \\
+        1\% critical value & -3.432 \\
+        5\% critical value & -2.862 \\
+        10\% critical value & -2.567 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+The lag length is selected automatically by minimizing the Akaike Information Criterion, resulting in one lag. Robustness checks using alternative fixed lag lengths lead to the same conclusion, see \ref{app:robustness check ADF}. The ADF statistic is strongly negative and the associated p-value is effectively zero. Consequently, the null hypothesis of a unit root is rejected at all conventional significance levels. This provides strong evidence that the Bitcoin log return series is stationary. 
+
+The result is consistent with the discussion in Section~\ref{subsec:log_returns}, where the Bitcoin price series was transformed into returns before further analysis. While financial asset prices often exhibit non-stationary behaviour, return series are typically more suitable for econometric modelling. The evidence presented here supports the use of the Bitcoin log return series as the basis for the subsequent volatility analysis.
+
+After establishing this, the analysis turns to dependence in the first and second moments of the return series.
+
+
+\subsection{Volatility clustering and ARCH effects}
+\label{subsec:arch_effects}
+
+The previous subsection established that the return series is stationary. However, stationarity of returns does not imply that volatility is constant over time. The next step is therefore to examine whether the magnitude of returns displays persistence, which would indicate volatility clustering and conditional heteroskedasticity.
+
+Figure~\ref{fig:acf_returns} presents the autocorrelation function of the Bitcoin log returns. The autocorrelations are generally small and fluctuate around zero. The Ljung--Box statistics in Table~\ref{tab:ljung_box_returns} provide similar evidence: at the 5\% significance level, the null hypothesis of no autocorrelation is not rejected at the reported lag lengths. This suggests that the return series contains little linear dependence in its conditional mean.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{figures/ACF_of_bitcoin_log_returns.png}
+    \caption{Autocorrelation function of daily Bitcoin log returns.}
+    \label{fig:acf_returns}
+\end{figure}
+
+\begin{table}[H]
+    \centering
+    \caption{Ljung--Box test for Bitcoin log returns}
+    \label{tab:ljung_box_returns}
+    \begin{tabular}{lrr}
+        \toprule
+        \textbf{Lag} & \textbf{Statistic} & \textbf{p-value} \\
+        \midrule
+        10 & 17.262 & 0.069 \\
+        20 & 26.635 & 0.146 \\
+        30 & 39.116 & 0.123 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+The absence of strong autocorrelation in raw returns does not rule out dependence in volatility. To examine this, Figure~\ref{fig:acf_squared_returns} reports the autocorrelation function of squared Bitcoin log returns. In contrast to the raw returns, the squared returns exhibit positive autocorrelations over several lags, indicating persistence in the magnitude of return shocks.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{figures/ACF_of_squared_bitcoin_log_returns.png}
+    \caption{Autocorrelation function of squared daily Bitcoin log returns.}
+    \label{fig:acf_squared_returns}
+\end{figure}
+
+This finding is confirmed by the Ljung--Box test applied to squared returns, reported in Table~\ref{tab:ljung_box_squared_returns}. The null hypothesis of no autocorrelation is strongly rejected at all reported lag lengths. This contrast between weak autocorrelation in returns and strong autocorrelation in squared returns is typical of financial return series and provides evidence of volatility clustering.
+
+\begin{table}[H]
+    \centering
+    \caption{Ljung--Box test for squared Bitcoin log returns}
+    \label{tab:ljung_box_squared_returns}
+    \begin{tabular}{lrr}
+        \toprule
+        \textbf{Lag} & \textbf{Statistic} & \textbf{p-value} \\
+        \midrule
+        10 & 163.270 & $6.84\times10^{-30}$ \\
+        20 & 208.889 & $1.95\times10^{-33}$ \\
+        30 & 240.194 & $1.17\times10^{-34}$ \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+% \begin{table}[H]
+%     \centering
+%     \caption{Ljung--Box tests for Bitcoin log returns and squared log returns}
+%     \label{tab:ljung_box_tests}
+%     \begin{tabular}{lrrrr}
+%         \toprule
+%         & \multicolumn{2}{c}{\textbf{Log returns}} & \multicolumn{2}{c}{\textbf{Squared log returns}} \\
+%         \cmidrule(lr){2-3} \cmidrule(lr){4-5}
+%         \textbf{Lag} & \textbf{Statistic} & \textbf{p-value} & \textbf{Statistic} & \textbf{p-value} \\
+%         \midrule
+%         10 & 17.262 & 0.069 & 163.270 & $6.84\times10^{-30}$ \\
+%         20 & 26.635 & 0.146 & 208.889 & $1.95\times10^{-33}$ \\
+%         30 & 39.116 & 0.123 & 240.194 & $1.17\times10^{-34}$ \\
+%         \bottomrule
+%     \end{tabular}
+% \end{table}
+
+The persistence observed in the squared returns is characteristic of volatility clustering, whereby large return movements tend to be followed by further large movements, while relatively calm periods tend to be followed by additional calm periods. This behaviour is one of the principal stylized facts of financial returns discussed in Section~\ref{subsec:stylized_facts}.
+
+The autocorrelation in squared returns suggests volatility clustering, but the ARCH--LM test provides a direct formal test for conditional heteroskedasticity. The null hypothesis is that no ARCH effects are present, meaning that past squared shocks do not help explain current conditional variance. Table~\ref{tab:arch_lm_test} reports the results.
+
+\begin{table}[H]
+    \centering
+    \caption{ARCH--LM test for Bitcoin log returns using 10 lags}
+    \label{tab:arch_lm_test}
+    \begin{tabular}{lr}
+        \toprule
+        \textbf{Statistic} & \textbf{Value} \\
+        \midrule
+        LM statistic & 118.952 \\
+        LM p-value & $8.25\times10^{-21}$ \\
+        F-statistic & 12.245 \\
+        F-test p-value & $3.76\times10^{-21}$ \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Both the LM statistic and the corresponding F-statistic strongly reject the null hypothesis of no ARCH effects. Hence, the conditional variance of Bitcoin returns cannot be treated as constant over time. Instead, the results indicate that current volatility depends on past return shocks.
+
+Taken together, the evidence from the return plots, squared-return autocorrelations, Ljung--Box tests and ARCH--LM test supports the use of ARCH-family models for Bitcoin return volatility. The next chapter therefore introduces the ARCH, GARCH and EGARCH specifications used to model and forecast the conditional variance.
+
+
+
+\appendix
+\pagenumbering{roman}
+\setcounter{page}{1}
+
+\renewcommand{\thesection}{Appendix \Alph{section}}
+
+\section{}\label{app:GARCH_unfolding}
+The ARCH($\infty$) representation of a GARCH(1,1) model is obtained unfolding the GARCH updating equation
+as follows
+\begin{proof}
+    \begin{align*}
+    \sigma_t^2  &= \omega + \beta\sigma_{t-1}^2 + \alpha_1y_{t-1}^2 \\
+                &= \omega + \beta_1(\omega + \beta\sigma_{t-2}^2 + \alpha_1y_{t-2}^2) + \alpha_1y_{t-1}^2 \\
+                &= \omega +\beta_1\omega + \beta_1^2\sigma_{t-2}^2 + \alpha_1\beta_1y_{t-2}^2 + \alpha_1y_{t-1}^2 \\
+                &= \omega +\beta_1\omega + \beta_1^2(\omega + \beta\sigma_{t-3}^2 + \alpha_1y_{t-3}^2) + \alpha_1\beta_1y_{t-2}^2 + \alpha_1y_{t-1}^2 \\
+                &= \omega +\beta_1\omega + \beta_1^2\omega + \beta_1^3\sigma_{t-3}^2 + \alpha_1\beta_1^2y_{t-3}^2 + \alpha_1\beta_1y_{t-2}^2 + \alpha_1y_{t-1}^2. \\
+    \end{align*}    
+    
+    Therefore, after $k$ iterations we get
+    \begin{align*}
+        \sigma_t^2  &= \omega + \cdots + \beta_1^{k-1}\omega + \beta^k\sigma_{t-k}^2 + \alpha_1\beta^{k-1}_1y_{t-k}^2 + \cdots + \alpha_1\beta_1y_{t-2}^2 + \alpha_1y_{t-1}^2 \\
+                    &= \omega\sum_{i=0}^{k-1}\beta_1^i + \beta_1^k\sigma_{t-k}^2 + \alpha_1\sum_{i=0}^{k-1}\beta_1^iy_{t-i-1}^2.
+    \end{align*} 
+    
+    Now we can take the limit $k \to \infty$ and obtain 
+    \begin{align*}
+        \sigma_t^2  &= \omega\sum_{i=0}^{\infty}\beta_1^i + \alpha_1\sum_{i=0}^{\infty}\beta_1^iy_{t-i-1}^2 \\
+                    &= \frac{\omega}{1-\beta_1} + \alpha_1\sum_{i=0}^{\infty}\beta_1^iy_{t-i-1}^2.
+    \end{align*}
+\end{proof}
+\noindent This representation shows that the GARCH(1,1) model incorporates information from many past squared innovations, but with geometrically declining weights. Compared with an ARCH model with many lags, the GARCH model can therefore capture long-lasting volatility dependence with only a small number of parameters.
+
+\section{}\label{app:robustness check ADF}
+\begin{table}[H]
+    \centering
+    \caption{ADF test results for alternative fixed lag lengths}
+    \label{tab:adf_fixed_lags}
+    \begin{tabular}{lrrl}
+        \toprule
+        \textbf{Fixed lag length} & \textbf{ADF statistic} & \textbf{p-value} & \textbf{Conclusion} \\
+        \midrule
+        0  & -63.5751 & $<10^{-16}$ & Reject unit root \\
+        1  & -42.9431 & $<10^{-16}$ & Reject unit root \\
+        2  & -35.1561 & $<10^{-16}$ & Reject unit root \\
+        5  & -23.8215 & $<10^{-16}$ & Reject unit root \\
+        10 & -17.6401 & $3.76 \times 10^{-30}$ & Reject unit root \\
+        20 & -12.3974 & $4.64 \times 10^{-23}$ & Reject unit root \\
+        30 & -10.2648 & $4.15 \times 10^{-18}$ & Reject unit root \\
+        \bottomrule
+    \end{tabular}
+\end{table}
